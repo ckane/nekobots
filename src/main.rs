@@ -337,8 +337,9 @@ fn main() -> Result<()> {
     let mut nekobots: Vec<Nekobot> = vec![];
 
     while count > 0 {
+        let label_index = count % labels.len();
         nekobots.push(Nekobot::new_rand(
-            format!("{}", labels.get(count..(count+1)).unwrap()).as_str(),
+            format!("{}", labels.get(label_index..(label_index + 1)).unwrap()).as_str(),
             nekomap.get_rows(),
             nekomap.get_cols(),
             &prog_args,
