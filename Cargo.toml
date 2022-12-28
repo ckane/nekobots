@@ -11,4 +11,4 @@ keywords = ["science", "simulation", "ecology"]
 [dependencies]
 crossterm = { version = "0.25" }
 nanorand = { version = "0.7" }
-clap = { version = "4.0" }
+clap = { version = "4.0", features = [ "derive" ] }

@@ -1,3 +1,4 @@
+use clap::Parser;
 use crossterm::{
     cursor,
     event::{poll, read, Event, KeyCode},
@@ -8,6 +9,30 @@ use crossterm::{
 use nanorand::Rng;
 use std::io::{stdout, Write};
 use std::time::{Duration, Instant};
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct ProgArgs {
+    /// Number of bots to create
+    #[arg(short, long, default_value_t = 10, value_name = "BOTS")]
+    bots: u8,
+
+    /// Tick delay in msec (inverse of speed)
+    #[arg(short, long, default_value_t = 250u128, value_name = "MSEC")]
+    tick_delay: u128,
+
+    /// Sight (how many squares ahead a bot can "see")
+    #[arg(short, long, default_value_t = 10, value_name = "SQUARES")]
+    sight: u16,
+
+    /// Vegetation regrowth time (in ticks)
+    #[arg(short, long, default_value_t = 100, value_name = "TICKS")]
+    regrow_time: u16,
+
+    /// Map vegetation probability (in percent)
+    #[arg(short, long, default_value_t = 5, value_name = "PERCENT")]
+    food_prob: u8,
+}
 
 #[derive(Clone, Copy)]
 enum NekobotState {
@@ -40,16 +65,15 @@ struct NystopiaTile {
 }
 
 impl NystopiaTile {
-    const FOOD_PROB: u8 = 1;
-    pub fn new() -> Self {
+    pub fn new(prog_args: &ProgArgs) -> Self {
         let mut rng = nanorand::tls_rng();
-        if (rng.generate::<u8>() % 100) < Self::FOOD_PROB {
+        if (rng.generate::<u8>() % 100) < prog_args.food_prob {
             // It's a food tile
             Self {
                 has_food: true,
                 eaten: false,
                 regrowth_counter: 0u16,
-                regrowth_rate: 100,
+                regrowth_rate: prog_args.regrow_time,
             }
         } else {
             // It's not a food tile
@@ -70,12 +94,12 @@ struct NystopiaMap {
 }
 
 impl NystopiaMap {
-    pub fn new() -> Result<Self> {
+    pub fn new(prog_args: &ProgArgs) -> Result<Self> {
         let (my_cols, my_rows) = terminal::size()?;
         let mut new_map = vec![];
 
         for _ in 0..(my_cols * my_rows) {
-            new_map.push(NystopiaTile::new());
+            new_map.push(NystopiaTile::new(prog_args));
         }
 
         Ok(Self {
@@ -162,14 +186,14 @@ impl NystopiaMap {
 }
 
 impl Nekobot {
-    fn new_rand(label: &str, rows: u16, cols: u16) -> Self {
+    fn new_rand(label: &str, rows: u16, cols: u16, prog_args: &ProgArgs) -> Self {
         let mut rng = nanorand::tls_rng();
         Self {
             row: rng.generate::<u16>() % rows,
             col: rng.generate::<u16>() % cols,
             label: label.into(),
             energy: 100,
-            sight: 10,
+            sight: prog_args.sight,
             state: NekobotState::Wander,
         }
     }
@@ -302,9 +326,11 @@ impl Nekobot {
 
 fn main() -> Result<()> {
     let mut stdout = stdout();
-    let mut nekomap = NystopiaMap::new()?;
-    let mut count = 32;
-    let period = 250u128;
+    let prog_args = ProgArgs::parse();
+    let mut nekomap = NystopiaMap::new(&prog_args)?;
+
+    let mut count = prog_args.bots as usize;
+    let period = prog_args.tick_delay;
 
     let labels = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*()";
 
@@ -315,6 +341,7 @@ fn main() -> Result<()> {
             format!("{}", labels.get(count..(count+1)).unwrap()).as_str(),
             nekomap.get_rows(),
             nekomap.get_cols(),
+            &prog_args,
         ));
         count -= 1;
     }
