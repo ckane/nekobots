@@ -277,7 +277,10 @@ impl Nekobot {
                     let cside = (((aside * aside) + (bside * bside)) as f64).sqrt() as u16;
 
                     if cside <= self.sight && tile.has_food && !tile.eaten {
-                        if cside < nearest_dist {
+                        if (cside < nearest_dist)
+                            || ((cside == nearest_dist)
+                                && (nanorand::tls_rng().generate::<u8>() % 2) == 1)
+                        {
                             nearest_dist = cside;
                             nearest_row = row;
                             nearest_col = col;
