@@ -1,0 +1,15 @@
+[package]
+name = "nekobots"
+version = "0.1.0"
+edition = "2021"
+authors = ["Coleman Kane <ckane@colemankane.org>"]
+license = "MIT"
+license-file = "LICENSE"
+keywords = ["science", "simulation", "ecology"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+crossterm = { version = "0.25" }
+nanorand = { version = "0.7" }
+clap = { version = "4.0" }
