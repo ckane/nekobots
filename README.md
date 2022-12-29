@@ -4,6 +4,14 @@ This is a rudimentary simulator of an ecosystem that I wrote as a small
 project in Rust to help teach myself Rust, as well as demonstrate an example
 of using it to develop something interesting.
 
+## Demo GIF
+
+```sh
+nekobots -s 10 -t 50 -b 150 -f 3
+```
+
+![Demonstration GIF of Simulation](/img/demo.gif)
+
 This simulator (right now) maintains the following entities:
 
 1. "Nekobots" - animals inhabiting the environment and consuming what grows here
