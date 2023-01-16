@@ -1,6 +1,6 @@
-use nanorand::Rng;
 use super::map::NystopiaMap;
 use super::ProgArgs;
+use nanorand::Rng;
 
 #[derive(Clone, Copy)]
 pub enum NekobotState {

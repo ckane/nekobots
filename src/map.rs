@@ -1,12 +1,5 @@
-use nanorand::Rng;
-use crossterm::{
-    cursor,
-    queue,
-    style::{self, Color},
-    terminal, Result,
-};
-use std::io::{Stdout, Write};
 use super::ProgArgs;
+use nanorand::Rng;
 
 pub struct NystopiaTile {
     has_food: bool,
@@ -53,8 +46,11 @@ pub struct NystopiaMap {
 }
 
 impl NystopiaMap {
-    pub fn new(prog_args: &ProgArgs) -> Result<Self> {
-        let (my_cols, my_rows) = terminal::size()?;
+    pub fn new(
+        prog_args: &ProgArgs,
+        my_cols: u16,
+        my_rows: u16,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let mut new_map = vec![];
 
         for _ in 0..(my_cols * my_rows) {
@@ -113,33 +109,5 @@ impl NystopiaMap {
                 }
             }
         }
-    }
-
-    pub fn render_map(self: &Self, stdout: &mut Stdout) -> Result<()> {
-        queue!(stdout, cursor::MoveTo(0, 0))?;
-
-        for r in 0..self.get_rows() {
-            for c in 0..self.get_cols() {
-                if let Some(this_tile) = self.get_tile(r, c) {
-                    if this_tile.has_food && !this_tile.eaten {
-                        queue!(
-                            stdout,
-                            style::SetBackgroundColor(Color::DarkGreen),
-                            style::Print(" ")
-                        )?;
-                    } else {
-                        queue!(
-                            stdout,
-                            style::SetBackgroundColor(Color::Black),
-                            style::Print(" ")
-                        )?;
-                    }
-                }
-            }
-        }
-
-        stdout.flush()?;
-
-        Ok(())
     }
 }

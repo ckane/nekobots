@@ -1,16 +1,13 @@
 mod bot;
 mod map;
+mod renderer;
+mod terminal;
 
-use bot::{Nekobot, NekobotState};
+use bot::Nekobot;
 use clap::Parser;
-use crossterm::{
-    cursor,
-    event::{poll, read, Event, KeyCode},
-    execute, queue,
-    style::{self, Color},
-    terminal, Result,
-};
+use crossterm::event::{poll, read, Event, KeyCode};
 use map::NystopiaMap;
+use renderer::Renderer;
 use std::io::{stdout, Write};
 use std::time::{Duration, Instant};
 
@@ -38,10 +35,15 @@ pub struct ProgArgs {
     food_prob: u8,
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut stdout = stdout();
     let prog_args = ProgArgs::parse();
-    let mut nekomap = NystopiaMap::new(&prog_args)?;
+    let mut render_instance = terminal::Terminal::new();
+    let mut nekomap = NystopiaMap::new(
+        &prog_args,
+        render_instance.get_cols()?,
+        render_instance.get_rows()?,
+    )?;
 
     let mut count = prog_args.bots as usize;
     let period = prog_args.tick_delay;
@@ -61,14 +63,7 @@ fn main() -> Result<()> {
         count -= 1;
     }
 
-    terminal::enable_raw_mode()?;
-
-    // Clear terminal
-    execute!(
-        stdout,
-        terminal::Clear(terminal::ClearType::All),
-        cursor::Hide
-    )?;
+    render_instance.init()?;
 
     let inst = Instant::now();
     let mut last_capture = inst.elapsed().as_millis();
@@ -79,47 +74,13 @@ fn main() -> Result<()> {
         if last_capture >= next_stop {
             // Render the map
             nekomap.tick_map();
-            nekomap.render_map(&mut stdout)?;
+            render_instance.render_map(&nekomap)?;
 
             // Render the bots
             for nekobot in nekobots.iter_mut() {
-                let mut tile = nekomap
-                    .get_tile(nekobot.get_row(), nekobot.get_col())
-                    .expect("Failed to identify tile".into());
-                // Remove the old placements
-                queue!(
-                    stdout,
-                    cursor::MoveTo(nekobot.get_col(), nekobot.get_row()),
-                    if !tile.eaten() && tile.has_food() {
-                        style::SetBackgroundColor(Color::DarkGreen)
-                    } else {
-                        style::SetBackgroundColor(Color::Black)
-                    },
-                    style::Print(" ")
-                )?;
-
+                render_instance.place_tile(&nekomap, nekobot.get_row(), nekobot.get_col())?;
                 nekobot.tick(&mut nekomap);
-
-                tile = nekomap
-                    .get_tile(nekobot.get_row(), nekobot.get_col())
-                    .expect("Failed to identify tile".into());
-
-                // Draw the new placements
-                queue!(
-                    stdout,
-                    cursor::MoveTo(nekobot.get_col(), nekobot.get_row()),
-                    if !tile.eaten() && tile.has_food() {
-                        style::SetBackgroundColor(Color::DarkGreen)
-                    } else {
-                        style::SetBackgroundColor(Color::Black)
-                    },
-                    match nekobot.get_state() {
-                        NekobotState::Wander => style::SetForegroundColor(Color::Grey),
-                        NekobotState::Forage => style::SetForegroundColor(Color::Yellow),
-                        NekobotState::Dead => style::SetForegroundColor(Color::Red),
-                    },
-                    style::Print(nekobot.get_label().clone())
-                )?;
+                render_instance.place_bot(&nekomap, &nekobot)?;
             }
 
             next_stop = last_capture + period;
@@ -141,13 +102,6 @@ fn main() -> Result<()> {
             Err(_) => {}
         }
     }
-
-    terminal::disable_raw_mode()?;
-
-    // Put cursor at bottom-left before exit
-    queue!(stdout, cursor::MoveTo(0, nekomap.get_rows() - 1))?;
-    queue!(stdout, cursor::Show)?;
-    stdout.flush()?;
 
     Ok(())
 }
