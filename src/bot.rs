@@ -32,7 +32,7 @@ impl Nekobot {
             row: rng.generate::<u16>() % rows,
             col: rng.generate::<u16>() % cols,
             label: label.into(),
-            energy: 100,
+            energy: rng.generate::<u8>() % 90 + 10,
             sight: prog_args.sight,
             state: NekobotState::Wander,
         }
@@ -76,7 +76,7 @@ impl Nekobot {
 
     fn eat(self: &mut Self, map: &mut NystopiaMap) -> bool {
         if map.consume(self.row, self.col) {
-            self.energy = 100;
+            self.energy += 20;
             true
         } else {
             false
