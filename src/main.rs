@@ -3,6 +3,7 @@ mod map;
 mod renderer;
 mod terminal;
 
+use simplelog::{Config, LevelFilter, WriteLogger};
 use bot::Nekobot;
 use clap::Parser;
 use crossterm::event::{poll, read, Event, KeyCode};
@@ -10,6 +11,8 @@ use map::NystopiaMap;
 use renderer::Renderer;
 use std::io::{stdout, Write};
 use std::time::{Duration, Instant};
+use log::info;
+use std::fs::File;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -33,12 +36,21 @@ pub struct ProgArgs {
     /// Map vegetation probability (in percent)
     #[arg(short, long, default_value_t = 5, value_name = "PERCENT")]
     food_prob: u8,
+
+    /// Optionally log activity to a file
+    #[arg(short, long, value_name = "LOGFILENAME")]
+    log: Option<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut stdout = stdout();
     let prog_args = ProgArgs::parse();
     let mut render_instance = terminal::Terminal::new();
+
+    if let Some(logfile) = (&prog_args).log.clone() {
+        WriteLogger::init(LevelFilter::Info, Config::default(), File::create(logfile)?)?;
+    }
+
     let mut nekomap = NystopiaMap::new(
         &prog_args,
         render_instance.get_cols()?,

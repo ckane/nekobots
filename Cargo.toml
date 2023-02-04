@@ -14,3 +14,5 @@ description = "A simple ecosystem simulator employing bots and food, in Rust"
 crossterm = { version = "0.25" }
 nanorand = { version = "0.7" }
 clap = { version = "4.0", features = [ "derive" ] }
+log = { version = "0" }
+simplelog = { version = "0.12" }
